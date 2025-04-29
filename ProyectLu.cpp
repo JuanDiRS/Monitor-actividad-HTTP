@@ -74,12 +74,13 @@ static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, 
 
 
 int main(int argc, char* argv[]){
-  std::string interfaceIPAddr = "10.0.0.1";
-  auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByIp(interfaceIPAddr);
-  if (dev == nullptr){
-    std::cerr << "Cannot find interface with IPv4 address of '" << interfaceIPAddr << "'" << std::endl;
-    return 1;
-  }
+//se cambio de tomar informacion de una IP a una interfaz del equipo en este caso any que toma todo el trafico que hay en linux wsl.
+std::string interfaceName = "any";
+auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(interfaceName);
+if (dev == nullptr){
+	std::cerr << "No se encontro la interfaz'" << interfaceName << "'" << std::endl;
+    	return 1;
+}
   // Informacion de la interfaz
 std::cout
     << "Interface info:" << std::endl
