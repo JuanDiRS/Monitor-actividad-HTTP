@@ -1,60 +1,48 @@
 #include <iostream>
 #include <algorithm>
-#include "stdlib.h"
-#include "PcapLiveDeviceList.h"
-#include "SystemUtils.h"
+#include <stdlib.h>
+#include <PcapLiveDeviceList.h>
+#include <SystemUtils.h>
+#include <memory>
+#include "Packet.h"
+#include "EthLayer.h"
+#include "IPv4Layer.h"
+#include "TcpLayer.h"
+#include "HttpLayer.h"
+#include <PcapFileDevice.h>
 
+//obtiene el protocolo del paquete y lo convierte a string.
+std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType)
+{
+	switch (protocolType){
+	case pcpp::Ethernet:
+		return "Ethernet";
+	case pcpp::IPv4:
+		return "IPv4";
+	case pcpp::TCP:
+		return "TCP";
+	case pcpp::HTTPRequest:
+	case pcpp::HTTPResponse:
+		return "HTTP";
+	default:
+		return "Unknown";
+	}
+}
+
+//hace un conteo simple de todos paquetes capturados
 struct PacketStats
 {
-    int ethPacketCount = 0;
-    int ipv4PacketCount = 0;
-    int ipv6PacketCount = 0;
-    int tcpPacketCount = 0;
-    int udpPacketCount = 0;
-    int dnsPacketCount = 0;
-    int httpPacketCount = 0;
-    int sslPacketCount = 0;
+    	int conteopkt = 0;
 
-
-  // deja a todas las variables listadas en 0
-    void clear() { ethPacketCount = ipv4PacketCount = ipv6PacketCount = tcpPacketCount = udpPacketCount = dnsPacketCount = httpPacketCount = sslPacketCount = 0; }
-
-    //El constructor se deja como predeterminado
-    PacketStats() = default;
-
-  //Toman valor las variables de cada paquete que llega
-    void consumePacket(pcpp::Packet& packet)
-    {
-        if (packet.isPacketOfType(pcpp::Ethernet))
-            ethPacketCount++;
-        if (packet.isPacketOfType(pcpp::IPv4))
-            ipv4PacketCount++;
-        if (packet.isPacketOfType(pcpp::IPv6))
-            ipv6PacketCount++;
-        if (packet.isPacketOfType(pcpp::TCP))
-            tcpPacketCount++;
-        if (packet.isPacketOfType(pcpp::UDP))
-            udpPacketCount++;
-        if (packet.isPacketOfType(pcpp::DNS))
-            dnsPacketCount++;
-        if (packet.isPacketOfType(pcpp::HTTP))
-            httpPacketCount++;
-        if (packet.isPacketOfType(pcpp::SSL))
-            sslPacketCount++;
+  //Se suma el contador por cada paquete que llega
+    void consumePacket(const pcpp::Packet& packet){
+        conteopkt ++;
     }
 
   //Muestra los resultados  del conteo en consola
     void printToConsole()
     {
-        std::cout
-            << "Ethernet packet count: " << ethPacketCount << std::endl
-            << "IPv4 packet count:     " << ipv4PacketCount << std::endl
-            << "IPv6 packet count:     " << ipv6PacketCount << std::endl
-            << "TCP packet count:      " << tcpPacketCount << std::endl
-            << "UDP packet count:      " << udpPacketCount << std::endl
-            << "DNS packet count:      " << dnsPacketCount << std::endl
-            << "HTTP packet count:     " << httpPacketCount << std::endl
-            << "SSL packet count:      " << sslPacketCount << std::endl;
+	std::cout << "Fueron: " << conteopkt << " paquetes en total."<<std::endl;
     }
 };
 
@@ -62,14 +50,35 @@ struct PacketStats
 //raw packet, el paquete en bruto sin procesar
 static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie)
 {
-    //extrae el obgeto stats desde cookie
-    auto* stats = static_cast<PacketStats*>(cookie);
+    	//extrae el obgeto stats desde cookie
+    	auto* stats = static_cast<PacketStats*>(cookie);
 
-    //analiza el paquete en bruto
-    pcpp::Packet parsedPacket(packet);
+    	//analiza el paquete en bruto
+    	pcpp::Packet parsedPacket(packet);
 
-   //obtiene los stats desde packet
-    stats->consumePacket(parsedPacket);
+   	//obtiene los stats desde packet
+	stats->consumePacket(parsedPacket);
+
+	for (auto* curLayer = parsedPacket.getFirstLayer(); curLayer != nullptr; curLayer = curLayer->getNextLayer()){
+    	std::cout
+        << "Layer type: " << getProtocolTypeAsString(curLayer->getProtocol()) << std::endl // obtiene el tipo de layer
+        << "Total data: " << curLayer->getDataLen() << " [bytes]; " // la longitud totalk del layer
+        << "Layer data: " << curLayer->getHeaderLen() << " [bytes]; " // la longitud del header del layer
+        << "Layer payload: " << curLayer->getLayerPayloadSize() << " [bytes]"// longitud total del layer precargado lo cual es la longitud total menos el head layer
+        << std::endl;
+	}
+	auto* httpRequestLayer = parsedPacket.getLayerOfType<pcpp::HttpRequestLayer>();
+    	if (httpRequestLayer != nullptr){
+        	auto* hostField = httpRequestLayer->getFieldByName(PCPP_HTTP_HOST_FIELD);
+        	if (hostField != nullptr)
+            		std::cout << "HTTP host: " << hostField->getFieldValue() << std::endl;
+        	auto* userAgentField = httpRequestLayer->getFieldByName(PCPP_HTTP_USER_AGENT_FIELD);
+        	if (userAgentField != nullptr)
+            		std::cout << "HTTP user-agent: " << userAgentField->getFieldValue() << std::endl;
+        	auto* cookieField = httpRequestLayer->getFieldByName(PCPP_HTTP_COOKIE_FIELD);
+        	if (cookieField != nullptr)
+            		std::cout << "HTTP cookie: " << cookieField->getFieldValue() << std::endl;
+    }
 }
 
 
@@ -100,9 +109,8 @@ if (!dev->open())
     return 1;
 }
 // crea el obgeto stats para instanciar la esttructura
-	PacketStats stats;
-
-  std::cout << std::endl << "Starting async capture..." << std::endl;
+PacketStats stats;
+std::cout << std::endl << "Starting async capture..." << std::endl;
 
   //se eligio el modo de captura asincronica ya que entrega los resultados inmediatamente.
   //se inicia la captura asincronica se da la funcion callback y las stacks de esta se ejecuntan como la coockie
@@ -118,7 +126,4 @@ if (!dev->open())
 	// muestra los resultados
 	std::cout << "Results:" << std::endl;
 	stats.printToConsole();
-
-	// limpia los stats
-	stats.clear();
 }
