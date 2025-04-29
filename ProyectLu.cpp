@@ -12,8 +12,7 @@
 #include <PcapFileDevice.h>
 
 //obtiene el protocolo del paquete y lo convierte a string.
-std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType)
-{
+std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType){
 	switch (protocolType){
 	case pcpp::Ethernet:
 		return "Ethernet";
@@ -30,8 +29,7 @@ std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType)
 }
 
 //hace un conteo simple de todos paquetes capturados
-struct PacketStats
-{
+struct PacketStats{
     	int conteopkt = 0;
 
   //Se suma el contador por cada paquete que llega
@@ -48,8 +46,7 @@ struct PacketStats
 
 //Esta es la funcion callback, la que cada vez que llega un paquete se llama esta funcion, esta solo funciona para metodos asincronios, metodos que no se ejecutan en el main.
 //raw packet, el paquete en bruto sin procesar
-static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie)
-{
+static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie){
     	//extrae el obgeto stats desde cookie
     	auto* stats = static_cast<PacketStats*>(cookie);
 
@@ -58,26 +55,12 @@ static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, 
 
    	//obtiene los stats desde packet
 	stats->consumePacket(parsedPacket);
-
-	for (auto* curLayer = parsedPacket.getFirstLayer(); curLayer != nullptr; curLayer = curLayer->getNextLayer()){
-    	std::cout
-        << "Layer type: " << getProtocolTypeAsString(curLayer->getProtocol()) << std::endl // obtiene el tipo de layer
-        << "Total data: " << curLayer->getDataLen() << " [bytes]; " // la longitud totalk del layer
-        << "Layer data: " << curLayer->getHeaderLen() << " [bytes]; " // la longitud del header del layer
-        << "Layer payload: " << curLayer->getLayerPayloadSize() << " [bytes]"// longitud total del layer precargado lo cual es la longitud total menos el head layer
-        << std::endl;
-	}
+	
 	auto* httpRequestLayer = parsedPacket.getLayerOfType<pcpp::HttpRequestLayer>();
     	if (httpRequestLayer != nullptr){
         	auto* hostField = httpRequestLayer->getFieldByName(PCPP_HTTP_HOST_FIELD);
         	if (hostField != nullptr)
-            		std::cout << "HTTP host: " << hostField->getFieldValue() << std::endl;
-        	auto* userAgentField = httpRequestLayer->getFieldByName(PCPP_HTTP_USER_AGENT_FIELD);
-        	if (userAgentField != nullptr)
-            		std::cout << "HTTP user-agent: " << userAgentField->getFieldValue() << std::endl;
-        	auto* cookieField = httpRequestLayer->getFieldByName(PCPP_HTTP_COOKIE_FIELD);
-        	if (cookieField != nullptr)
-            		std::cout << "HTTP cookie: " << cookieField->getFieldValue() << std::endl;
+            		std::cout << hostField->getFieldValue() << std::endl;
     }
 }
 
