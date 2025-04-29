@@ -12,8 +12,8 @@
 #include <PcapFileDevice.h>
 
 //obtiene el protocolo del paquete y lo convierte a string.
-std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType){
-	switch (protocolType){
+std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType) {
+	switch (protocolType) {
 	case pcpp::Ethernet:
 		return "Ethernet";
 	case pcpp::IPv4:
@@ -29,82 +29,98 @@ std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType){
 }
 
 //hace un conteo simple de todos paquetes capturados
-struct PacketStats{
-    	int conteopkt = 0;
+struct PacketStats {
+	int conteopkt = 0;
+	int conthttp = 0;
+	//vector que guarda cada paquete que llega
+	std::vector<std::string> hostsDetectados;
 
-  //Se suma el contador por cada paquete que llega
-    void consumePacket(const pcpp::Packet& packet){
-        conteopkt ++;
-    }
+	//Se suma el contador por cada paquete que llega
+	void consumePacket(const pcpp::Packet& packet, const std::string* host = nullptr) {
+		conteopkt++;
+		if (host != nullptr) {
+				conthttp++;
+				hostsDetectados.push_back(*host);
+		}
+	}
 
-  //Muestra los resultados  del conteo en consola
-    void printToConsole()
-    {
-	std::cout << "Fueron: " << conteopkt << " paquetes en total."<<std::endl;
-    }
+	//Muestra los resultados  del conteo en consola
+	void printToConsole(){
+		std::cout << "Fueron: " << conteopkt << " paquetes en total." << std::endl;
+		std::cout << "Fueron: " << conthttp << " http en total." << std::endl;
+
+		for (const auto& host : hostsDetectados) {
+			std::cout << "Host detectado: " << host << std::endl;
+		}
+	}
 };
 
 //Esta es la funcion callback, la que cada vez que llega un paquete se llama esta funcion, esta solo funciona para metodos asincronios, metodos que no se ejecutan en el main.
 //raw packet, el paquete en bruto sin procesar
-static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie){
-    	//extrae el obgeto stats desde cookie
-    	auto* stats = static_cast<PacketStats*>(cookie);
+static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie) {
+	//extrae el obgeto stats desde cookie
+	auto* stats = static_cast<PacketStats*>(cookie);
 
-    	//analiza el paquete en bruto
-    	pcpp::Packet parsedPacket(packet);
+	//analiza el paquete en bruto
+	pcpp::Packet parsedPacket(packet);
+	std::string* punteroh = nullptr;
 
-   	//obtiene los stats desde packet
-	stats->consumePacket(parsedPacket);
-	
+
 	auto* httpRequestLayer = parsedPacket.getLayerOfType<pcpp::HttpRequestLayer>();
-    	if (httpRequestLayer != nullptr){
-        	auto* hostField = httpRequestLayer->getFieldByName(PCPP_HTTP_HOST_FIELD);
-        	if (hostField != nullptr)
-            		std::cout << hostField->getFieldValue() << std::endl;
-    }
+	if (httpRequestLayer != nullptr) {
+		auto* hostField = httpRequestLayer->getFieldByName(PCPP_HTTP_HOST_FIELD);
+		if (hostField != nullptr){
+			std::string nombrehost = hostField->getFieldValue();
+
+			punteroh = &nombrehost;
+
+			std::cout <<"encontre este host: " << nombrehost<< std::endl;
+		}
+	}
+	//obtiene los stats desde packet
+	stats->consumePacket(parsedPacket,punteroh);
 }
 
 
-int main(int argc, char* argv[]){
-if(argc < 2){
-	std::cerr<<"No se ingreso el tiempo de ejecucion"<<std::endl;
-	return 1;
-}
-//convierto lo que hay en entero
-int tiempo = std::atoi(argv[1]);
+int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		std::cerr << "No se ingreso el tiempo de ejecucion" << std::endl;
+		return 1;
+	}
+	//convierto lo que hay en entero
+	int tiempo = std::atoi(argv[1]);
+	//se cambio de tomar informacion de una IP a una interfaz del equipo en este caso any que toma todo el trafico que hay en linux wsl.
+	std::string interfaceName = "any";
+	auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(interfaceName);
+	if (dev == nullptr) {
+		std::cerr << "No se encontro la interfaz'" << interfaceName << "'" << std::endl;
+		return 1;
+	}
+	// Informacion de la interfaz
+	std::cout
+		<< "Interface info:" << std::endl
+		<< "   Interface name:        " << dev->getName() << std::endl
+		<< "   Interface description: " << dev->getDesc() << std::endl
+		<< "   MAC address:           " << dev->getMacAddress() << std::endl
+		<< "   Default gateway:       " << dev->getDefaultGateway() << std::endl
+		<< "   Interface MTU:         " << dev->getMtu() << std::endl;
 
-//se cambio de tomar informacion de una IP a una interfaz del equipo en este caso any que toma todo el trafico que hay en linux wsl.
-std::string interfaceName = "any";
-auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(interfaceName);
-if (dev == nullptr){
-	std::cerr << "No se encontro la interfaz'" << interfaceName << "'" << std::endl;
-    	return 1;
-}
-  // Informacion de la interfaz
-std::cout
-    << "Interface info:" << std::endl
-    << "   Interface name:        " << dev->getName() << std::endl
-    << "   Interface description: " << dev->getDesc() << std::endl
-    << "   MAC address:           " << dev->getMacAddress() << std::endl
-    << "   Default gateway:       " << dev->getDefaultGateway() << std::endl
-    << "   Interface MTU:         " << dev->getMtu() << std::endl;
+	if (!dev->getDnsServers().empty()) {
+		std::cout << "   DNS server:            " << dev->getDnsServers().front() << std::endl;
+	}
+	// open the device before start capturing/sending packets
+	if (!dev->open())
+	{
+		std::cerr << "Cannot open device" << std::endl;
+		return 1;
+	}
+	// crea el obgeto stats para instanciar la esttructura
+	PacketStats stats;
+	std::cout << std::endl << "Starting async capture..." << std::endl;
 
-if (!dev->getDnsServers().empty()){
-    std::cout << "   DNS server:            " << dev->getDnsServers().front() << std::endl;
-  }
-  // open the device before start capturing/sending packets
-if (!dev->open())
-{
-    std::cerr << "Cannot open device" << std::endl;
-    return 1;
-}
-// crea el obgeto stats para instanciar la esttructura
-PacketStats stats;
-std::cout << std::endl << "Starting async capture..." << std::endl;
+	//se eligio el modo de captura asincronica ya que entrega los resultados inmediatamente.
+	//se inicia la captura asincronica se da la funcion callback y las stacks de esta se ejecuntan como la coockie
 
-  //se eligio el modo de captura asincronica ya que entrega los resultados inmediatamente.
-  //se inicia la captura asincronica se da la funcion callback y las stacks de esta se ejecuntan como la coockie
-  
 	dev->startCapture(onPacketArrives, &stats);
 
 	// Duerme por el tiempo que se elija en segundos el main miesyras se capturan y analizan los paquetes.
@@ -114,6 +130,6 @@ std::cout << std::endl << "Starting async capture..." << std::endl;
 	dev->stopCapture();
 
 	// muestra los resultados
-	std::cout << "Results:" << std::endl;
+	std::cout << "Resultados:" << std::endl;
 	stats.printToConsole();
 }
