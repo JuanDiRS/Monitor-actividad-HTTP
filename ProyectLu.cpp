@@ -66,6 +66,13 @@ static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, 
 
 
 int main(int argc, char* argv[]){
+if(argc < 2){
+	std::cerr<<"No se ingreso el tiempo de ejecucion"<<std::endl;
+	return 1;
+}
+//convierto lo que hay en entero
+int tiempo = std::atoi(argv[1]);
+
 //se cambio de tomar informacion de una IP a una interfaz del equipo en este caso any que toma todo el trafico que hay en linux wsl.
 std::string interfaceName = "any";
 auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(interfaceName);
@@ -100,8 +107,8 @@ std::cout << std::endl << "Starting async capture..." << std::endl;
   
 	dev->startCapture(onPacketArrives, &stats);
 
-	// Duerme por 10 segundos el main miesyras se capturan y analizan los paquetes.
-	pcpp::multiPlatformSleep(10);
+	// Duerme por el tiempo que se elija en segundos el main miesyras se capturan y analizan los paquetes.
+	pcpp::multiPlatformSleep(tiempo);
 
 	//cuando se despierta la fucnion main se detiene la capturad e paquetes
 	dev->stopCapture();
