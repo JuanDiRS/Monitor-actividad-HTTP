@@ -37,6 +37,9 @@ struct PacketStats {
 	//map permite guardar claves y valores, Cada clave ES UNICA y se pude usar para acceder al valor
 	std::map<std::string, int>hostsDetectados;
 
+	//Un vector que almacene los resultyados de map
+	std::vector<std::pair<std::string, int>> rank;
+
 	//Se suma el contador por cada paquete que llega
 	void consumePacket(const pcpp::Packet& packet, const std::string *host) {
 		conteopkt++;
@@ -48,9 +51,20 @@ struct PacketStats {
 
 	//Muestra los resultados  del conteo en consola
 	void printToConsole(){
-		for (const auto [clave,valor]: hostsDetectados){
+		//recorre map y los resultados los alamacena en el vector
+		for (const auto& [clave, valor] : hostsDetectados) {
+			rank.emplace_back(clave, valor);
+		}
+
+		// Ordena el valor del contador de map de mayor a menor
+		std::sort(rank.begin(), rank.end(), [](const auto& a, const auto& b) {
+			return a.second > b.second;
+			});
+		// recorre e imprime el vector
+		for (const auto [clave,valor]: rank){
 			std::cout <<clave << "\t" << "\t" << valor << std::endl;
 		}
+		
 		std::cout << "Fueron: " << conteopkt << " paquetes en total." << std::endl;
 		std::cout << "Fueron: " << conthttp << " http en total." << std::endl;
 	}
