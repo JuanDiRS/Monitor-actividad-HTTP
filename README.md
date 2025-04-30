@@ -1,17 +1,20 @@
 # Monitor-actividad-HTTP
 Un monitor que muestra la actividad HTTP de un equipo
 
-Este programa está diseñado para capturar y analizar los paquetes de red que circulan en el dispositivo donde se ejecuta. Su funcionalidad principal es filtrar y mostrar únicamente aquellos paquetes que utilizan el protocolo HTTP, permitiendo observar el tráfico HTTP durante un período específico de tiempo.
+Este programa permite capturar y analizar el tráfico de red HTTP en un dispositivo en tiempo real, filtrando únicamente las solicitudes HTTP y mostrando estadísticas sobre las peticiones agrupadas por URL durante un período específico de tiempo. Está diseñado para funcionar en sistemas Linux y WSL (Windows Subsystem for Linux).
 
 ## Funcionalidades
-- Captura en tiempo real de trafico de red.
+- Captura de tráfico de red en tiempo real.
 - Filtrado especifico de datos HTTP.
-- Muestra la cantidad de peticiones agrupadas por URL.
+- Agrupación y conteo de solicitudes HTTP por URL.
+- Estadísticas sobre el número total de peticiones HTTP realizadas durante la ejecución.
 
 ## Como esta contruido
-- **WSL:** Este programa fue desarrollado y ejecutado en WSL (Windows Subsystem for Linux).
+- **WSL(Windows Subsystem for Linux):** Este programa fue desarrollado y ejecutado en WSL .
 
 - **C++:** El programa se construye en el lenguaje C++ el cual se puede consultar en el archivo "ProyectoLu.cpp", donde se ve el codigo fuente del programa.
+
+- libpcap y PcapPlusPlus: Estas bibliotecas permiten la captura y el análisis de paquetes de red. PcapPlusPlus proporciona una interfaz más amigable para trabajar con los datos capturados.
 
 ## Requisitos
 - **libpcap**: Libreria para la captura de paquetes en sistemas Unix/Linux. PcapPlusPlus depende de libpcap para acceder a la interfaz de red y realizar la captura.
