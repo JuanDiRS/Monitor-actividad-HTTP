@@ -32,57 +32,56 @@ std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType) {
 struct PacketStats {
 	int conteopkt = 0;
 	int conthttp = 0;
-	//vector que guarda cada paquete que llega
-	std::vector<std::string> hostsDetectados;
+
+	//se usa map para guardar cada paquete que llega
+	//map permite guardar claves y valores, Cada clave ES UNICA y se pude usar para acceder al valor
+	std::map<std::string, int>hostsDetectados;
 
 	//Se suma el contador por cada paquete que llega
-	void consumePacket(const pcpp::Packet& packet, const std::string* host = nullptr) {
+	void consumePacket(const pcpp::Packet& packet, const std::string *host) {
 		conteopkt++;
 		if (host != nullptr) {
-				conthttp++;
-				hostsDetectados.push_back(*host);
+			conthttp++;
+			hostsDetectados[*host]++;
 		}
 	}
 
 	//Muestra los resultados  del conteo en consola
 	void printToConsole(){
+		for (const auto [clave,valor]: hostsDetectados){
+			std::cout <<clave << "\t" << "\t" << valor << std::endl;
+		}
 		std::cout << "Fueron: " << conteopkt << " paquetes en total." << std::endl;
 		std::cout << "Fueron: " << conthttp << " http en total." << std::endl;
-
-		for (const auto& host : hostsDetectados) {
-			std::cout << "Host detectado: " << host << std::endl;
-		}
 	}
 };
 
 //Esta es la funcion callback, la que cada vez que llega un paquete se llama esta funcion, esta solo funciona para metodos asincronios, metodos que no se ejecutan en el main.
 //raw packet, el paquete en bruto sin procesar
-static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie) {
+static void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice *dev, void *cookie) {
+
 	//extrae el obgeto stats desde cookie
-	auto* stats = static_cast<PacketStats*>(cookie);
+	auto *stats = static_cast<PacketStats*>(cookie);
 
 	//analiza el paquete en bruto
 	pcpp::Packet parsedPacket(packet);
-	std::string* punteroh = nullptr;
 
-
-	auto* httpRequestLayer = parsedPacket.getLayerOfType<pcpp::HttpRequestLayer>();
+	//El obgeto requestLayrer esta contenido en un paquete de la libreria, aqui se accede a este paquete mediante un puntero sin necesidad de copiarlo
+	auto *httpRequestLayer = parsedPacket.getLayerOfType<pcpp::HttpRequestLayer>();
 	if (httpRequestLayer != nullptr) {
-		auto* hostField = httpRequestLayer->getFieldByName(PCPP_HTTP_HOST_FIELD);
+		auto *hostField = httpRequestLayer->getFieldByName(PCPP_HTTP_HOST_FIELD);
 		if (hostField != nullptr){
 			std::string nombrehost = hostField->getFieldValue();
-
-			punteroh = &nombrehost;
-
-			std::cout <<"encontre este host: " << nombrehost<< std::endl;
+			stats->consumePacket(parsedPacket, &nombrehost);
 		}
 	}
-	//obtiene los stats desde packet
-	stats->consumePacket(parsedPacket,punteroh);
+
 }
 
 
-int main(int argc, char* argv[]) {
+
+
+int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		std::cerr << "No se ingreso el tiempo de ejecucion" << std::endl;
 		return 1;
@@ -91,7 +90,7 @@ int main(int argc, char* argv[]) {
 	int tiempo = std::atoi(argv[1]);
 	//se cambio de tomar informacion de una IP a una interfaz del equipo en este caso any que toma todo el trafico que hay en linux wsl.
 	std::string interfaceName = "any";
-	auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(interfaceName);
+	auto *dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(interfaceName);
 	if (dev == nullptr) {
 		std::cerr << "No se encontro la interfaz'" << interfaceName << "'" << std::endl;
 		return 1;
@@ -116,7 +115,7 @@ int main(int argc, char* argv[]) {
 	}
 	// crea el obgeto stats para instanciar la esttructura
 	PacketStats stats;
-	std::cout << std::endl << "Starting async capture..." << std::endl;
+	std::cout << std::endl << "Iniciando captura de paquetes...." << std::endl;
 
 	//se eligio el modo de captura asincronica ya que entrega los resultados inmediatamente.
 	//se inicia la captura asincronica se da la funcion callback y las stacks de esta se ejecuntan como la coockie
