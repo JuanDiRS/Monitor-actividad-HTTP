@@ -1,0 +1,3 @@
+C:/Users/juand/OneDrive/Documentos/Visual Projects/ProyectoLu/out/build/x64-debug/CMakeFiles/ProyectoLu.dir
+C:/Users/juand/OneDrive/Documentos/Visual Projects/ProyectoLu/out/build/x64-debug/CMakeFiles/edit_cache.dir
+C:/Users/juand/OneDrive/Documentos/Visual Projects/ProyectoLu/out/build/x64-debug/CMakeFiles/rebuild_cache.dir
