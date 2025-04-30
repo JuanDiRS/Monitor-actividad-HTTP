@@ -14,7 +14,7 @@ Este programa permite capturar y analizar el tráfico de red HTTP en un disposit
 
 - **C++:** El programa se construye en el lenguaje C++ el cual se puede consultar en el archivo "ProyectoLu.cpp", donde se ve el codigo fuente del programa.
 
-- libpcap y PcapPlusPlus: Estas bibliotecas permiten la captura y el análisis de paquetes de red. PcapPlusPlus proporciona una interfaz más amigable para trabajar con los datos capturados.
+- **libpcap y PcapPlusPlus:** Estas bibliotecas permiten la captura y el análisis de paquetes de red. PcapPlusPlus proporciona una interfaz más amigable para trabajar con los datos capturados.
 
 ## Requisitos
 - **libpcap**: Libreria para la captura de paquetes en sistemas Unix/Linux. PcapPlusPlus depende de libpcap para acceder a la interfaz de red y realizar la captura.
