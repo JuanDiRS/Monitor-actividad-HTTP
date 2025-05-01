@@ -1,4 +1,4 @@
-## complejidad del codigo que genera los histogramas
+## Complejidad del codigo que genera los histogramas
 el codigo el cual se encarga de realizar esta tarea se encuentra en la funcion "Print to console" la cual almacena los paquetes ya analizados y los cuenta por url y finalmente muestra el histograma y las estadisticas de paquetes encontrados:
 
 void printToConsole() {
