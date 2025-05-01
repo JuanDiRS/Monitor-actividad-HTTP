@@ -12,7 +12,7 @@ Este programa permite capturar y analizar el tráfico de red HTTP en un disposit
 ## Como esta contruido
 - **WSL(Windows Subsystem for Linux):** Este programa fue desarrollado y ejecutado en WSL .
 
-- **C++:** El programa se construye en el lenguaje C++ el cual se puede consultar en el archivo "ProyectoLu.cpp", donde se ve el codigo fuente del programa.
+- **C++:** El programa se construye en el lenguaje C++ el cual se puede consultar en el archivo **"ProyectoLu.cpp"**, donde se ve el codigo fuente del programa.
 
 - **libpcap y PcapPlusPlus:** Estas bibliotecas permiten la captura y el análisis de paquetes de red. PcapPlusPlus proporciona una interfaz más amigable para trabajar con los datos capturados.
 
@@ -29,9 +29,9 @@ Puedes descargar PcapPlusPlus desde: https://pcapplusplus.github.io/
 1. Asegúrate de tener instaladas las dependencias mencionadas anteriormente.
 2. Clona el repositorio con el siguiente comando:
 git clone https://github.com/JuanDiRS/Monitor-actividad-HTTP.git.
-4. Accede a la carpeta del repositorio clonado y dirígete a la subcarpeta build, donde encontrarás el ejecutable del proyecto llamado ProyectoLu.
+4. Accede a la carpeta del repositorio clonado y dirígete a la subcarpeta build, donde encontrarás el ejecutable del proyecto llamado **ProyectoLu**.
 5. Otorga permisos de ejecucion al programa con el comando:  chmod +x ProyectoLu
-6. Ejecuta el programa con: "./ProyectoLu <Tiempo>". Reemplaza <Tiempo> por la cantidad de segundos que deseas que se ejecute el programa.
+6. Ejecuta el programa con: "./ProyectoLu Tiempo". Reemplaza "Tiempo" por la cantidad de segundos que deseas que se ejecute el programa.
 
 ## Limitaciones
 - El programa solo es capaz de hacer una consulta a la vez.
