@@ -1,12 +1,13 @@
 ## Complejidad del codigo que genera los histogramas
 el codigo el cual se encarga de realizar esta tarea se encuentra en la funcion "Print to console" la cual almacena los paquetes ya analizados y los cuenta por url y finalmente muestra el histograma y las estadisticas de paquetes encontrados:
 
+```cpp
 void printToConsole() {
     // Copiar datos del map al vector: O(n)
     for (const auto& [clave, valor] : hostsDetectados) {
         rank.emplace_back(clave, valor);
     }
-
+    
     // Ordenar el vector por número de peticiones (valor): O(n log n)
     std::sort(rank.begin(), rank.end(), [](const auto& a, const auto& b) {
         return a.second > b.second;
@@ -21,3 +22,6 @@ void printToConsole() {
     std::cout << "Fueron: " << conteopkt << " paquetes en total." << std::endl;
     std::cout << "Fueron: " << conthttp << " http en total." << std::endl;
 }
+```
+Complejidad total
+O(n log n) ya que la operación más costosa es la ordenación del vector rank.
